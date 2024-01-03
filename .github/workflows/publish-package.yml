@@ -19,8 +19,8 @@ jobs:
       uses: snok/install-poetry@v1
     - name: Versioning
       env:
-        CODE_VERSION: ${{ github.ref_name#v }}
-      run: poetry version $CODE_VERSION
+        TAG: ${{ github.ref_name }}
+      run: poetry version ${TAG#v}
 #    TODO: tests
     - name: Publish
       env:
