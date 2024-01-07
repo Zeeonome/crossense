@@ -2,6 +2,7 @@ import itertools
 from abc import abstractmethod, ABCMeta
 from functools import partial
 from numbers import Integral
+from typing import Union, Iterable, Optional
 
 import numpy as np
 from joblib import Parallel, delayed
@@ -17,6 +18,7 @@ from sklearn.ensemble._bagging import (
     _parallel_decision_function,
 )
 from sklearn.ensemble._base import _partition_estimators
+from sklearn.model_selection import BaseCrossValidator
 from sklearn.model_selection._split import check_cv, _BaseKFold
 from sklearn.tree import DecisionTreeClassifier, DecisionTreeRegressor
 from sklearn.utils import indices_to_mask
@@ -318,41 +320,6 @@ class CrossBaggingClassifier(ClassifierMixin, BaseCrossBagging):
     A Bagging classifier is an ensemble meta-estimator that fits base
     classifiers each on a fold of cross-validation generator
 
-    Parameters
-    ----------
-    estimator : object, default=None
-        The base estimator to fit on random subsets of the dataset.
-        If None, then the base estimator is a
-        :class:`~sklearn.tree.DecisionTreeClassifier`.
-
-
-    cv : int, cross-validation generator or an iterable, default=5
-        Determines the cross-validation splitting strategy.
-        Possible inputs for cv are:
-
-        - `None`, to use the default 5-fold cross validation,
-        - int, to specify the number of folds in a `(Stratified)KFold`,
-        - :term:`CV splitter`,
-        - An iterable that generates (train, test) splits as arrays of indices.
-
-        For `int`/`None` inputs, if the estimator is a classifier and `y` is
-        either binary or multiclass, :class:`StratifiedKFold` is used. In all
-        other cases, :class:`KFold` is used. These splitters are instantiated
-        with `shuffle=False` so the splits will be the same across calls.
-
-        Refer :ref:`User Guide <cross_validation>` for the various
-        cross-validation strategies that can be used here.
-
-    n_jobs : int, default=None
-        The number of jobs to run in parallel for both :meth:`fit` and
-        :meth:`predict`. ``None`` means 1 unless in a
-        :obj:`joblib.parallel_backend` context. ``-1`` means using all
-        processors. See :term:`Glossary <n_jobs>` for more details.
-
-    verbose : int, default=0
-        Controls the verbosity when fitting and predicting.
-
-
     Attributes
     ----------
     estimator_ : estimator
@@ -393,12 +360,46 @@ class CrossBaggingClassifier(ClassifierMixin, BaseCrossBagging):
 
     def __init__(
         self,
-        estimator=None,
-        cv=5,
+        estimator: object = None,
+        cv: Union[int, BaseCrossValidator, Iterable] = 5,
         *,
-        n_jobs=None,
+        n_jobs: Optional[int] = None,
         verbose=0,
     ):
+        """
+        Parameters
+        ----------
+        estimator:
+            The base estimator to fit on random subsets of the dataset.
+            If None, then the base estimator is a
+            :class:`~sklearn.tree.DecisionTreeClassifier`.
+
+        cv:
+            Determines the cross-validation splitting strategy.
+            Possible inputs for cv are:
+
+            - `None`, to use the default 5-fold cross validation,
+            - int, to specify the number of folds in a `(Stratified)KFold`,
+            - :term:`CV splitter`,
+            - An iterable that generates (train, test) splits as arrays of indices.
+
+            For `int`/`None` inputs, if the estimator is a classifier and `y` is
+            either binary or multiclass, :class:`StratifiedKFold` is used. In all
+            other cases, :class:`KFold` is used. These splitters are instantiated
+            with `shuffle=False` so the splits will be the same across calls.
+
+            Refer :ref:`User Guide <cross_validation>` for the various
+            cross-validation strategies that can be used here.
+
+        n_jobs:
+            The number of jobs to run in parallel for both :meth:`fit` and
+            :meth:`predict`. ``None`` means 1 unless in a
+            :obj:`joblib.parallel_backend` context. ``-1`` means using all
+            processors. See :term:`Glossary <n_jobs>` for more details.
+
+        verbose:
+            Controls the verbosity when fitting and predicting.
+        """
         super().__init__(
             estimator=estimator,
             cv=cv,
@@ -624,39 +625,6 @@ class CrossBaggingRegressor(RegressorMixin, BaseCrossBagging):
     A Bagging regressor is an ensemble meta-estimator that fits base
     regressors each on a fold of cross-validation generator
 
-    Parameters
-    ----------
-    estimator : object, default=None
-        The base estimator to fit on random subsets of the dataset.
-        If None, then the base estimator is a
-        :class:`~sklearn.tree.DecisionTreeRegressor`.
-
-    cv : int, cross-validation generator or an iterable, default=5
-        Determines the cross-validation splitting strategy.
-        Possible inputs for cv are:
-
-        - `None`, to use the default 5-fold cross validation,
-        - int, to specify the number of folds in a `(Stratified)KFold`,
-        - :term:`CV splitter`,
-        - An iterable that generates (train, test) splits as arrays of indices.
-
-        For `int`/`None` inputs, if the estimator is a classifier and `y` is
-        either binary or multiclass, :class:`StratifiedKFold` is used. In all
-        other cases, :class:`KFold` is used. These splitters are instantiated
-        with `shuffle=False` so the splits will be the same across calls.
-
-        Refer :ref:`User Guide <cross_validation>` for the various
-        cross-validation strategies that can be used here.
-
-    n_jobs : int, default=None
-        The number of jobs to run in parallel for both :meth:`fit` and
-        :meth:`predict`. ``None`` means 1 unless in a
-        :obj:`joblib.parallel_backend` context. ``-1`` means using all
-        processors. See :term:`Glossary <n_jobs>` for more details.
-
-    verbose : int, default=0
-        Controls the verbosity when fitting and predicting.
-
     Attributes
     ----------
     estimator_ : estimator
@@ -691,12 +659,46 @@ class CrossBaggingRegressor(RegressorMixin, BaseCrossBagging):
 
     def __init__(
         self,
-        estimator=None,
-        cv=5,
+        estimator: object = None,
+        cv: Union[int, BaseCrossValidator, Iterable] = 5,
         *,
-        n_jobs=None,
+        n_jobs: Optional[int] = None,
         verbose=0,
     ):
+        """
+        Parameters
+        ----------
+        estimator:
+            The base estimator to fit on random subsets of the dataset.
+            If None, then the base estimator is a
+            :class:`~sklearn.tree.DecisionTreeClassifier`.
+
+        cv:
+            Determines the cross-validation splitting strategy.
+            Possible inputs for cv are:
+
+            - `None`, to use the default 5-fold cross validation,
+            - int, to specify the number of folds in a `(Stratified)KFold`,
+            - :term:`CV splitter`,
+            - An iterable that generates (train, test) splits as arrays of indices.
+
+            For `int`/`None` inputs, if the estimator is a classifier and `y` is
+            either binary or multiclass, :class:`StratifiedKFold` is used. In all
+            other cases, :class:`KFold` is used. These splitters are instantiated
+            with `shuffle=False` so the splits will be the same across calls.
+
+            Refer :ref:`User Guide <cross_validation>` for the various
+            cross-validation strategies that can be used here.
+
+        n_jobs:
+            The number of jobs to run in parallel for both :meth:`fit` and
+            :meth:`predict`. ``None`` means 1 unless in a
+            :obj:`joblib.parallel_backend` context. ``-1`` means using all
+            processors. See :term:`Glossary <n_jobs>` for more details.
+
+        verbose:
+            Controls the verbosity when fitting and predicting.
+        """
         super().__init__(
             estimator=estimator,
             cv=cv,
