@@ -31,5 +31,5 @@ jobs:
         run: poetry run pytest
       - name: Compare docs
         run: | 
-          poetry run pdoc crossense -o ./docs_new
+          poetry run pdoc3 -o ./docs_new --html crossense
           diff -r ./docs ./docs_new || exit 1
