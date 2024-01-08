@@ -1,3 +1,4 @@
+from __future__ import annotations
 import itertools
 from abc import abstractmethod, ABCMeta
 from functools import partial
@@ -13,10 +14,7 @@ from sklearn.base import (
     RegressorMixin,
 )
 from sklearn.ensemble import BaseEnsemble
-from sklearn.ensemble._bagging import (
-    _parallel_predict_log_proba,
-    _parallel_decision_function,
-)
+
 from sklearn.ensemble._base import _partition_estimators
 from sklearn.model_selection import BaseCrossValidator
 from sklearn.model_selection._split import check_cv, _BaseKFold
@@ -121,6 +119,36 @@ def _parallel_predict_proba(estimators, X, n_classes):
     return proba
 
 
+def _parallel_predict_log_proba(estimators, X, n_classes):
+    """Private function used to compute log probabilities within a job."""
+    n_samples = X.shape[0]
+    log_proba = np.empty((n_samples, n_classes))
+    log_proba.fill(-np.inf)
+    all_classes = np.arange(n_classes, dtype=int)
+
+    for estimator in estimators:
+        log_proba_estimator = estimator.predict_log_proba(X)
+
+        if n_classes == len(estimator.classes_):
+            log_proba = np.logaddexp(log_proba, log_proba_estimator)
+
+        else:
+            log_proba[:, estimator.classes_] = np.logaddexp(
+                log_proba[:, estimator.classes_],
+                log_proba_estimator[:, range(len(estimator.classes_))],
+            )
+
+            missing = np.setdiff1d(all_classes, estimator.classes_)
+            log_proba[:, missing] = np.logaddexp(log_proba[:, missing], -np.inf)
+
+    return log_proba
+
+
+def _parallel_decision_function(estimators, X):
+    """Private function used to compute decisions within a job."""
+    return sum(estimator.decision_function(X) for estimator in estimators)
+
+
 def _parallel_predict_regression(estimators, X):
     """Private function used to compute predictions within a job."""
     return [estimator.predict(X) for estimator in estimators]
@@ -162,7 +190,7 @@ class BaseCrossBagging(BaseEnsemble, metaclass=ABCMeta):
     def __init__(
         self,
         estimator=None,
-        cv=10,
+        cv=5,
         *,
         n_jobs=None,
         verbose=0,
@@ -181,7 +209,7 @@ class BaseCrossBagging(BaseEnsemble, metaclass=ABCMeta):
         # BaseBagging.estimator is not validated yet
         prefer_skip_nested_validation=False
     )
-    def fit(self, X, y, sample_weight=None):
+    def fit(self, X, y, sample_weight=None) -> BaseCrossBagging:
         """Build a Bagging ensemble of estimators from the training set (X, y).
 
         Parameters
@@ -313,6 +341,12 @@ class BaseCrossBagging(BaseEnsemble, metaclass=ABCMeta):
         for fold in self.cv.split(X, y, groups):
             self.estimators_samples_.append(fold[0])
 
+    def set_params(self, **params):
+        cv = params.pop("cv", None)
+        if cv:
+            self.cv = check_cv(cv, classifier=is_classifier(self.estimator))
+        super().set_params(**params)
+
 
 class CrossBaggingClassifier(ClassifierMixin, BaseCrossBagging):
     """A cross-validation Bagging classifier.
@@ -348,7 +382,7 @@ class CrossBaggingClassifier(ClassifierMixin, BaseCrossBagging):
     Examples
     --------
     >>> from sklearn.svm import SVC
-    >>> from sklearn.ensemble import BaggingClassifier
+    >>> from crossense.ensemble import CrossBaggingClassifier
     >>> from sklearn.datasets import make_classification
     >>> X, y = make_classification(n_samples=100, n_features=4,
     ...                            n_informative=2, n_redundant=0,
@@ -647,7 +681,7 @@ class CrossBaggingRegressor(RegressorMixin, BaseCrossBagging):
     Examples
     --------
     >>> from sklearn.svm import SVR
-    >>> from sklearn.ensemble import BaggingRegressor
+    >>> from crossense.ensemble import CrossBaggingRegressor
     >>> from sklearn.datasets import make_regression
     >>> X, y = make_regression(n_samples=100, n_features=4,
     ...                        n_informative=2, n_targets=1,
