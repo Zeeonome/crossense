@@ -8,6 +8,7 @@ on:
 jobs:
   build_and_publish:
     runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
     steps:
     - name: Checkout source
       uses: actions/checkout@v2
@@ -21,7 +22,6 @@ jobs:
       env:
         TAG: ${{ github.ref_name }}
       run: poetry version ${TAG#v}
-#    TODO: tests
     - name: Publish
       env:
         PYPI_TOKEN: ${{ secrets.PYPI_TOKEN }}
