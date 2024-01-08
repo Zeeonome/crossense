@@ -209,7 +209,7 @@ class BaseCrossBagging(BaseEnsemble, metaclass=ABCMeta):
         # BaseBagging.estimator is not validated yet
         prefer_skip_nested_validation=False
     )
-    def fit(self, X, y, sample_weight=None) -> BaseCrossBagging:
+    def fit(self, X, y, sample_weight=None):
         """Build a Bagging ensemble of estimators from the training set (X, y).
 
         Parameters
@@ -226,11 +226,6 @@ class BaseCrossBagging(BaseEnsemble, metaclass=ABCMeta):
             Sample weights. If None, then samples are equally weighted.
             Note that this is supported only if the base estimator supports
             sample weighting.
-
-        Returns
-        -------
-        self : object
-            Fitted estimator.
         """
         # Convert data (X is required to be 2d and indexable)
         X, y = self._validate_data(
@@ -280,11 +275,6 @@ class BaseCrossBagging(BaseEnsemble, metaclass=ABCMeta):
         check_input : bool, default=True
             Override value used when fitting base estimator. Only supported
             if the base estimator has a check_input parameter for fit function.
-
-        Returns
-        -------
-        self : object
-            Fitted estimator.
         """
         self._generate_fold_indices(X, y, None)
         if sample_weight is not None:
