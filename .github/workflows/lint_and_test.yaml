@@ -29,3 +29,7 @@ jobs:
         run: poetry run ruff --exit-non-zero-on-fix .
       - name: Test with pytest
         run: poetry run pytest
+      - name: Compare docs
+        run: | 
+          poetry run pdoc crossense -o ./docs_new
+          diff ./docs ./docs_new || exit 1
