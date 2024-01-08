@@ -335,7 +335,7 @@ class BaseCrossBagging(BaseEnsemble, metaclass=ABCMeta):
         cv = params.pop("cv", None)
         if cv:
             self.cv = check_cv(cv, classifier=is_classifier(self.estimator))
-        super().set_params(**params)
+        return super().set_params(**params)
 
 
 class CrossBaggingClassifier(ClassifierMixin, BaseCrossBagging):

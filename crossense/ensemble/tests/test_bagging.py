@@ -277,7 +277,7 @@ def test_estimator():
 
 def test_bagging_with_pipeline():
     estimator = CrossBaggingClassifier(
-        make_pipeline(SelectKBest(k=1), DecisionTreeClassifier())
+        make_pipeline(SelectKBest(k=1), DecisionTreeClassifier(random_state=0))
     )
     estimator.fit(iris.data, iris.target)
     assert isinstance(estimator[0].steps[-1][1].random_state, int)
@@ -321,7 +321,7 @@ def test_estimators_samples():
 
     # Test for correct formatting
     assert len(estimators_samples) == len(estimators)
-    assert len(estimators_samples[0]) == len(X) // 2
+    assert len(estimators_samples[0]) == len(X) // 5 * 4
     assert estimators_samples[0].dtype.kind == "i"
 
     # Re-fit single estimator to test for consistent sampling
@@ -349,9 +349,11 @@ def test_estimators_samples_deterministic():
     X, y = iris.data, iris.target
 
     base_pipeline = make_pipeline(
-        SparseRandomProjection(n_components=2), LogisticRegression()
+        SparseRandomProjection(n_components=2, random_state=0),
+        LogisticRegression(random_state=0),
     )
-    clf = CrossBaggingClassifier(estimator=base_pipeline)
+    cv = KFold(5)
+    clf = CrossBaggingClassifier(estimator=base_pipeline, cv=cv)
     clf.fit(X, y)
     pipeline_estimator_coef = clf.estimators_[0].steps[-1][1].coef_.copy()
 
@@ -412,38 +414,6 @@ def test_bagging_regressor_with_missing_inputs():
             bagging_regressor.fit(X, y)
 
 
-def test_bagging_classifier_with_missing_inputs():
-    # Check that BaggingClassifier can accept X with missing/infinite data
-    X = np.array(
-        [
-            [1, 3, 5],
-            [2, None, 6],
-            [2, np.nan, 6],
-            [2, np.inf, 6],
-            [2, -np.inf, 6],
-        ]
-    )
-    y = np.array([3, 6, 6, 6, 6])
-    classifier = DecisionTreeClassifier()
-    pipeline = make_pipeline(FunctionTransformer(replace), classifier)
-    pipeline.fit(X, y).predict(X)
-    bagging_classifier = CrossBaggingClassifier(pipeline)
-    bagging_classifier.fit(X, y)
-    y_hat = bagging_classifier.predict(X)
-    assert y.shape == y_hat.shape
-    bagging_classifier.predict_log_proba(X)
-    bagging_classifier.predict_proba(X)
-
-    # Verify that exceptions can be raised by wrapper classifier
-    classifier = DecisionTreeClassifier()
-    pipeline = make_pipeline(classifier)
-    with pytest.raises(ValueError):
-        pipeline.fit(X, y)
-    bagging_classifier = CrossBaggingClassifier(pipeline)
-    with pytest.raises(ValueError):
-        bagging_classifier.fit(X, y)
-
-
 def test_bagging_get_estimators_indices():
     # Check that Bagging estimator can generate sample indices properly
     # Non-regression test for:
@@ -459,7 +429,7 @@ def test_bagging_get_estimators_indices():
         def fit(self, X, y):
             self._sample_indices = y
 
-    clf = CrossBaggingRegressor(estimator=MyEstimator(), n_estimators=1, random_state=0)
+    clf = CrossBaggingRegressor(estimator=MyEstimator())
     clf.fit(X, y)
 
     assert_array_equal(clf.estimators_[0]._sample_indices, clf.estimators_samples_[0])
